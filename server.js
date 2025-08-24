@@ -9,9 +9,8 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY, // pega do .env
 });
-
 const openai = new OpenAIApi(configuration);
 
 app.post('/ask', async (req, res) => {
@@ -29,9 +28,9 @@ app.post('/ask', async (req, res) => {
         res.json({ answer });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ answer: "Erro ao processar a pergunta." });
+        res.status(500).json({ answer: "Erro no servidor GPT." });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Backend rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
