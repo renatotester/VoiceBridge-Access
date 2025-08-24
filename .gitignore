@@ -1,0 +1,8 @@
+# Ignorar o arquivo de ambiente com a chave
+.env
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
