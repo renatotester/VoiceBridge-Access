@@ -1,4 +1,3 @@
-// Checa suporte do navegador
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (!window.SpeechRecognition) {
@@ -15,12 +14,10 @@ if (!window.SpeechRecognition) {
     const output = document.getElementById('output');
     const responseDiv = document.getElementById('response');
 
-    // Normaliza texto (remove acentos e pontuação)
     function normalizeText(text) {
         return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,!?]/g, "").toLowerCase();
     }
 
-    // Mini FAQ offline
     const faq = [
         { questionKeywords: ["como funciona", "detalhes", "explica"], answer: "O VoiceBridge Access funciona offline usando reconhecimento de voz e respostas automáticas." },
         { questionKeywords: ["como usar", "instrucoes", "manual"], answer: "Clique em 'Iniciar Reconhecimento', fale sua pergunta, e o sistema vai responder automaticamente." },
@@ -29,7 +26,6 @@ if (!window.SpeechRecognition) {
         { questionKeywords: ["ajuda", "suporte"], answer: "Claro! Estou aqui para ajudar. Faça sua pergunta e responderei." }
     ];
 
-    // Procura a resposta no FAQ
     function getFAQAnswer(userText) {
         const msg = normalizeText(userText);
 
@@ -41,10 +37,24 @@ if (!window.SpeechRecognition) {
                 }
             }
         }
-        return "Desculpe, não entendi. Pode reformular sua pergunta?";
+        return null;
     }
 
-    // Fala a resposta
+    async function getOnlineAnswer(question) {
+        try {
+            const response = await fetch('http://localhost:3000/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await response.json();
+            return data.answer;
+        } catch (error) {
+            console.log("Sem conexão, usando FAQ offline.");
+            return null;
+        }
+    }
+
     function speak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'pt-BR';
@@ -58,10 +68,16 @@ if (!window.SpeechRecognition) {
         status.textContent = "Ouvindo... fale sua pergunta!";
     });
 
-    recognition.addEventListener('result', (event) => {
+    recognition.addEventListener('result', async (event) => {
         const transcript = event.results[0][0].transcript;
         output.textContent = `Você disse: "${transcript}"`;
-        const reply = getFAQAnswer(transcript);
+
+        let reply = getFAQAnswer(transcript);
+        if (!reply) {
+            reply = await getOnlineAnswer(transcript);
+            if (!reply) reply = "Desculpe, não entendi. Pode reformular sua pergunta?";
+        }
+
         responseDiv.textContent = reply;
         speak(reply);
         status.textContent = "Clique no botão para falar novamente.";
